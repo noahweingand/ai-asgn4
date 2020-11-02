@@ -5,14 +5,17 @@
 #   - Remove numbers
 #   - Remove stop words. A set of stop words is provided in the file “stop_words.txt”
 #   - Tokenize paragraphs
-# To Do:
 #   - Perform stemming. Use the Porter stemming code provided in the file “Porter_Stemmer_X.txt”
-#   - Combine stemmed words.
 #   - Extract most frequent words.
+# To Do:
+#   - Combine stemmed words. ?????????
+#   - Cluster to group similar paragraphs together
 
 import re
+from PorterStemmer import PorterStemmer 
 
 tokens = []
+porter_stemmer = PorterStemmer()
 
 def clean_text(input):
     input = input.lower() # remove capitalization
@@ -32,6 +35,39 @@ def remove_stop_words(paragraph, stop_words):
             tokens.append(word)
     return tokens
 
+def stem_tokens(tokens):
+    i = 0
+    stemmed_tokens = {}
+    for paragraph in tokens:
+        paragraph_index = i
+        temp = []
+        for token in paragraph:
+            # print(porter_stemmer.stem(token, 0, len(token)- 1))
+            stemmed_token = porter_stemmer.stem(token, 0, len(token)- 1)
+            temp.append(stemmed_token)
+        stemmed_tokens[paragraph_index] = temp
+        i += 1
+    return stemmed_tokens
+
+def create_feature_vector(stemmed_tokens):
+    feature_vector = {}
+    i = 0
+    for paragraph in stemmed_tokens:
+        for token in stemmed_tokens[paragraph]:
+            if token not in feature_vector:
+                feature_vector[token] = i
+                i += 1
+    return feature_vector, i
+
+def create_tdm(stemmed_tokens, feature_vector, dimensionality):
+    tdm = []
+    for paragraph in stemmed_tokens:
+        feature_freq = [0 for _ in range(dimensionality)]
+        for token in stemmed_tokens[paragraph]:
+            feature_freq[feature_vector[token]] += 1
+        tdm.append(feature_freq)
+    return tdm
+
 # read in text files and create objects
 paragraphs_file = open("./paragraphs.txt", "r")
 stop_words_file = open("./stop_words.txt", "r")
@@ -45,8 +81,14 @@ for paragraph in paragraphs:
     if paragraph: # if it's not whitespace
         tokens.append(remove_stop_words(paragraph, stop_words)) # get tokens list for each paragraph
 
-for i, token in enumerate(tokens):
-    print("--------------------------------------------- " + str(i) + " --------------------------------------------- ")
-    print(token)
-    print(" ")
+# for i, token in enumerate(tokens):
+#     print("--------------------------------------------- " + str(i) + " --------------------------------------------- ")
+#     print(token)
+#     print(" ")
+
+stemmed_tokens = stem_tokens(tokens)
+feature_vector, dimensionality = create_feature_vector(stemmed_tokens)
+
+tdm = create_tdm(stemmed_tokens, feature_vector, dimensionality)
+print(tdm)
 
