@@ -98,27 +98,33 @@ def get_euclidean_distance(pattern, cluster_weights):
 def cluster(tdm, threshold, alpha):
     # wk = (m * wk + alpha * X) / (m + 1)
     all_clusters = []
-    all_clusters.append((tdm[0], 0))
+    all_clusters.append((tdm[0], 0, [0])) # the cluster weights, m value, list of occupying nodes
     for i in range(1, len(tdm)):
         pattern = tdm[i]
-        closest_cluster = None
+        closest_cluster = None # index of the closest cluster
+        closest_distance = None # the closest_distance of current pattern
         current_m = None
         for j in range(len(all_clusters)):
-            current_cluster, m = all_clusters[j]
+            current_cluster, m, nodes = all_clusters[j]
             ed = get_euclidean_distance(pattern, current_cluster)
             if (ed <= threshold):
                 if closest_cluster is None:
                     closest_cluster = j
+                    closest_distance = ed
                     current_m = m
-                elif (ed < closest_cluster):
+                elif (ed < closest_distance):
                     closest_cluster = j
+                    closest_distance = ed
                     current_m = m
         if closest_cluster is None:
-            all_clusters.append((pattern, 0))
+            all_clusters.append((pattern, 0, [i]))
         else:
             m = current_m
-            wk = ((m / (m + 1)) * closest_cluster) + ((alpha / (m + 1)) * pattern)
-            all_clusters[j] = (wk, m + 1)
+            wk = ((m / (m + 1)) * all_clusters[closest_cluster][0]) + ((alpha / (m + 1)) * pattern)
+            all_clusters[closest_cluster][2].append(i)
+            all_clusters[closest_cluster] = (wk, m + 1,
+                    all_clusters[closest_cluster][2])
+
     return all_clusters
 
 # read in text files and create objects
@@ -146,5 +152,13 @@ feature_vector, dimensionality = create_feature_vector(stemmed_tokens, 20)
 tdm = create_tdm(stemmed_tokens, feature_vector, dimensionality)
 #print(tdm)
 clusters = cluster(tdm, 15, alpha)
-print(len(clusters))
+
+for i in range(len(clusters)):
+    current_cluster = clusters[i]
+    print("")
+    print("Info for cluster: ", i)
+    print("Number of paragraphs in this cluster: ", len(current_cluster[2]))
+    print("Paragraphs grouped together: ", current_cluster[2])
+    print("Weights for this cluster: ", current_cluster[0])
+    print("")
 
