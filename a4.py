@@ -55,14 +55,30 @@ def stem_tokens(tokens):
 
 def create_feature_vector(stemmed_tokens, limit):
     word_freqs = {}
+    doc_freqs = {}
+    tfidf = {}
+    total_word_count = 0
+
+    # get word freqs
     for paragraph in stemmed_tokens:
         for token in stemmed_tokens[paragraph]:
+            total_word_count += 1
+            if token not in doc_freqs:
+                doc_freqs[token] = {}
+                doc_freqs[token][paragraph] = 1
+            elif paragraph not in doc_freqs[token]:
+                doc_freqs[token][paragraph] = 1
+
             if token not in word_freqs:
                 word_freqs[token] = 1
             else:
                 word_freqs[token] += 1
+
+    for token in word_freqs:
+        tfidf[token] = (word_freqs[token] / total_word_count) * (16 / len(doc_freqs[token].keys()))
+
     # sort frequencies in descending order
-    sorted_freqs = dict(sorted(word_freqs.items(), key=operator.itemgetter(1),reverse=True))
+    sorted_freqs = dict(sorted(tfidf.items(), key=operator.itemgetter(1),reverse=True))
     most_freq_words = {}
     i = 0
     for word in sorted_freqs:
@@ -71,7 +87,7 @@ def create_feature_vector(stemmed_tokens, limit):
         else:
             most_freq_words[word] = i
             i += 1
-    #print(most_freq_words)
+    print(most_freq_words)
     return most_freq_words, i
 
 def create_tdm(stemmed_tokens, feature_vector, dimensionality):
@@ -148,10 +164,9 @@ for paragraph in paragraphs:
 stemmed_tokens = stem_tokens(tokens)
 feature_vector, dimensionality = create_feature_vector(stemmed_tokens, 20)
 
-
 tdm = create_tdm(stemmed_tokens, feature_vector, dimensionality)
 #print(tdm)
-clusters = cluster(tdm, 15, alpha)
+clusters = cluster(tdm, 10, alpha)
 
 for i in range(len(clusters)):
     current_cluster = clusters[i]
@@ -159,6 +174,6 @@ for i in range(len(clusters)):
     print("Info for cluster: ", i)
     print("Number of paragraphs in this cluster: ", len(current_cluster[2]))
     print("Paragraphs grouped together: ", current_cluster[2])
-    print("Weights for this cluster: ", current_cluster[0])
+    # print("Weights for this cluster: ", current_cluster[0])
     print("")
 
