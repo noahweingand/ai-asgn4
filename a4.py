@@ -16,6 +16,7 @@ from PorterStemmer import PorterStemmer
 import operator
 import math
 import numpy as np
+import pandas as pd
 
 tokens = []
 porter_stemmer = PorterStemmer()
@@ -162,10 +163,16 @@ for paragraph in paragraphs:
 #     print(" ")
 
 stemmed_tokens = stem_tokens(tokens)
-feature_vector, dimensionality = create_feature_vector(stemmed_tokens, 20)
+feature_vector, dimensionality = create_feature_vector(stemmed_tokens, 9)
 
+# make the tdm and print to a csv file
 tdm = create_tdm(stemmed_tokens, feature_vector, dimensionality)
-#print(tdm)
+tdm_df = pd.DataFrame(tdm)
+tdm_df.columns = feature_vector.keys()
+tdm_df.index.name = 'paragraph'
+tdm_df.to_csv('tdm.csv')
+
+# make the clusters
 clusters = cluster(tdm, 10, alpha)
 
 for i in range(len(clusters)):
@@ -174,6 +181,6 @@ for i in range(len(clusters)):
     print("Info for cluster: ", i)
     print("Number of paragraphs in this cluster: ", len(current_cluster[2]))
     print("Paragraphs grouped together: ", current_cluster[2])
-    # print("Weights for this cluster: ", current_cluster[0])
+    print("Center of cluster: ", current_cluster[0])
     print("")
 
